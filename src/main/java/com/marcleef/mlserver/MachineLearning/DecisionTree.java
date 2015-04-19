@@ -5,6 +5,7 @@ package com.marcleef.mlserver.MachineLearning;
  */
 import java.util.*;
 import java.io.*;
+import com.google.gson.*;
 
 import com.marcleef.mlserver.Util.*;
 
@@ -329,6 +330,18 @@ public class DecisionTree {
         return buildModel(tree, "", "");
     }
 
+    public ArrayList<JSONNode> getJSON(Node cur, String parent) {
+        if (cur == null) return new ArrayList();
+        ArrayList<JSONNode> nodeValues = new ArrayList<JSONNode>();
+        nodeValues.add(new JSONNode(cur.attribute, parent));
+        nodeValues.addAll(getJSON(cur.no, cur.attribute));
+        nodeValues.addAll(getJSON(cur.yes, cur.attribute));
+        return nodeValues;
+    }
+
+    public ArrayList<JSONNode> getNodes() {
+        return  getJSON(tree, "null");
+    }
 
 
 }
