@@ -5,7 +5,6 @@ package com.marcleef.mlserver.MachineLearning;
  */
 import java.util.*;
 import java.io.*;
-import com.google.gson.*;
 
 import com.marcleef.mlserver.Util.*;
 
@@ -13,25 +12,27 @@ public class DecisionTree {
 
     ArrayList<Example> Examples;
     static Node tree;
-    private final static double CHI_SQUARE_THRESHOLD = 3.84;
-    private static String classVariable;
+    private final double CHI_SQUARE_THRESHOLD = 3.84;
+    private  String classVariable;
+    private JSONid id;
 
 
 
     public DecisionTree(ArrayList<Example> s, String classVar, boolean chiSqr) {
         Examples = s;
         classVariable = classVar;
-        HashMap<String, Boolean> attributeMap = new HashMap<String, Boolean>();
+        HashMap<String, Boolean> attributeMap = new HashMap<>();
         for(String attr : Examples.get(0).getAttributes()) {
             attributeMap.put(attr, true);
         }
         attributeMap.remove(classVariable);
+        id = new JSONid(UUID.randomUUID());
         tree = buildTree(Examples, attributeMap, chiSqr);
 
     }
 
     public ArrayList<Example> getSubset(ArrayList<Example> examples, String attr, Boolean b) {
-        ArrayList<Example> result = new ArrayList<Example>();
+        ArrayList<Example> result = new ArrayList<>();
         for(int i = 0; i < examples.size(); i++) {
             if(examples.get(i).getValue(attr) == b) {
                 result.add(examples.get(i));
@@ -138,7 +139,7 @@ public class DecisionTree {
         // rootAttr is the attribute that best classifies examples (highest gain)
         String rootAttr = "";
         double highestGain = -2;
-        double curGain = 0;
+        double curGain;
         for(String attr : attributes.keySet()) {
             curGain = gain(examples, attr);
             if(curGain > highestGain) {
@@ -181,7 +182,7 @@ public class DecisionTree {
     }
 
     public static HashMap<String, Boolean> copy(HashMap<String, Boolean> map) {
-        HashMap<String, Boolean> result = new HashMap<String, Boolean>();
+        HashMap<String, Boolean> result = new HashMap<>();
         for(String str : map.keySet()) {
             result.put(str, map.get(str));
         }
@@ -207,11 +208,11 @@ public class DecisionTree {
         result = passedResult;
 
 
-        if(noAttr == "+") {
+        if(noAttr.equals("+")) {
             result += depth + root.attribute + " = 0 : 1" + "\n";
         }
 
-        else if(noAttr == "-") {
+        else if(noAttr.equals("-")) {
             result += depth + root.attribute + " = 0 : 0" + "\n";
         }
 
@@ -220,11 +221,11 @@ public class DecisionTree {
             result = buildModel(root.no, depth + " | ", result);
         }
 
-        if(yesAttr == "+") {
+        if(yesAttr.equals("+")) {
             result += depth + root.attribute + " = 1 : 1" + "\n";
         }
 
-        else if(yesAttr == "-") {
+        else if(yesAttr.equals("-")) {
             result += depth + root.attribute + " = 1 : 0" + "\n";
         }
 
@@ -249,10 +250,10 @@ public class DecisionTree {
         int p1 = 0;	 //actual positives
         int n2 = 0;
         int p2 = 0;
-        double Ep1 = 0;
-        double Ep2 = 0;
-        double En1 = 0;
-        double En2 = 0;
+        double Ep1;
+        double Ep2;
+        double En1;
+        double En2;
 
         // (Ei) Expected positive Examples, S1 * p/S
         // (Ei) Expected negative Examples, S1 * n/S
@@ -300,9 +301,7 @@ public class DecisionTree {
 
     public Boolean testExample(Example s) {
         Node cur = tree;
-        int steps = 0;
-        while(cur.attribute != "+" && cur.attribute != "-") {
-            steps++;
+        while(!cur.attribute.equals("+") && !cur.attribute.equals("-")) {
             if(s.getValue(cur.attribute)) {
                 cur = cur.yes;
             }
@@ -311,7 +310,7 @@ public class DecisionTree {
             }
         }
 
-        if(cur.attribute == "+") {
+        if(cur.attribute.equals("+")) {
             return true;
         }
         return false;
@@ -331,8 +330,8 @@ public class DecisionTree {
     }
 
     public ArrayList<JSONNode> getJSON(Node cur, String parent) {
-        if (cur == null) return new ArrayList();
-        ArrayList<JSONNode> nodeValues = new ArrayList<JSONNode>();
+        if (cur == null) return new ArrayList<>();
+        ArrayList<JSONNode> nodeValues = new ArrayList<>();
         nodeValues.add(new JSONNode(cur.attribute, parent));
         nodeValues.addAll(getJSON(cur.no, cur.attribute));
         nodeValues.addAll(getJSON(cur.yes, cur.attribute));
@@ -341,6 +340,10 @@ public class DecisionTree {
 
     public ArrayList<JSONNode> getNodes() {
         return  getJSON(tree, "null");
+    }
+
+    public JSONid getID() {
+        return id;
     }
 
 

@@ -19,7 +19,6 @@ import com.marcleef.mlserver.Util.*;
  */
 public class Driver {
     public static void main(String[] args) {
-        Converter conv = new Converter();
         post("/build/tree", new Route() {
             @Override
             public Object handle(Request request, Response response) {
@@ -28,7 +27,7 @@ public class Driver {
                 JSONObject obj = new JSONObject(request.body());
                 JSONArray examples = obj.getJSONArray("examples");
                 JSONArray attributes = obj.getJSONArray("attributes");
-                DecisionTree dt = new DecisionTree(conv.JSONtoExampleList(attributes, examples), attributes.get(attributes.length() - 1).toString(), false);
+                DecisionTree dt = new DecisionTree(Converter.JSONtoExampleList(attributes, examples), attributes.get(attributes.length() - 1).toString(), false);
                 return dt.getNodes();
             }
         }, new JsonUtil());
