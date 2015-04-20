@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 /**
  * Created by marc_leef on 4/15/15.
+ * Training/Test example objects.
  */
 public class Example {
 
@@ -18,22 +19,28 @@ public class Example {
         }
     }
 
+    /**
+     * Gets value (1 or 0) of given attribute.
+     * @param attr Attribute of example to query.
+     * @return Boolean value of attribute.
+     */
     public Boolean getValue(String attr) {
         return map.get(attr);
     }
 
+    /**
+     * Getter for example attributes.
+     * @return List of attributes.
+     */
     public String[] getAttributes() {
         return map.keySet().toArray(new String[0]);
     }
 
-    public String toString() {
-        String result = "";
-        for(String attr : map.keySet()) {
-            result += map.get(attr) + "\t";
-        }
-        return result;
-    }
 
+    /**
+     * Gets alternative data representation of data.
+     * @return vector value of data.
+     */
     public ArrayList<Boolean> getVector() {
         return vector;
     }

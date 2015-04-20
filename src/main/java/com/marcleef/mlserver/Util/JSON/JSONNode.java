@@ -1,4 +1,4 @@
-package com.marcleef.mlserver.Util;
+package com.marcleef.mlserver.Util.JSON;
 
 /**
  * Created by marc_leef on 4/19/15.

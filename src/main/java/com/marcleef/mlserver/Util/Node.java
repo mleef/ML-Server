@@ -2,6 +2,7 @@ package com.marcleef.mlserver.Util;
 
 /**
  * Created by marc_leef on 4/15/15.
+ * Node objects for decision tree structure.
  */
 
 public class Node {

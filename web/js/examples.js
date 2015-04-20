@@ -8,11 +8,14 @@ $(document).ready(function(e) {
         examples[i - 1] = lines[i];
       }
 
-      var obj = {"attributes" : attributes, "examples" : examples};
+      var obj = {"name" : "Test Tree", "attributes" : attributes, "examples" : examples};
       $.post( "http://localhost:4567/build/tree", JSON.stringify(obj), function( data ) {
             data = JSON.parse(data);
-
-            // name based map for the nodes
+            console.log(data.name);
+            console.log(data.key);
+            console.log(data.timeCreated);
+            console.log(data.timeElapsed);
+/*            // name based map for the nodes
             var dataMap = data.reduce(function(map, node) {
              map[node.name] = node;
              return map;
@@ -98,7 +101,7 @@ $(document).ready(function(e) {
                .attr("class", "link")
                .attr("d", diagonal);
 
-            }
+            }*/
 
       });
     });

@@ -2,11 +2,14 @@ package com.marcleef.mlserver.MachineLearning;
 
 /**
  * Created by marc_leef on 4/15/15.
+ * Decision Tree build and query logic implementation.
  */
 import java.util.*;
 import java.io.*;
 
 import com.marcleef.mlserver.Util.*;
+import com.marcleef.mlserver.Util.JSON.JSONNode;
+import com.marcleef.mlserver.Util.JSON.JSONid;
 
 public class DecisionTree {
 
@@ -17,8 +20,15 @@ public class DecisionTree {
     private JSONid id;
 
 
-
-    public DecisionTree(ArrayList<Example> s, String classVar, boolean chiSqr) {
+    /**
+     * Decision Tree constructor
+     * @param s List of training examples to build tree out of.
+     * @param classVar Class variable for training set labeling.
+     * @param name Name of decision tree.
+     * @param chiSqr Enables chi-square threshold in building process.
+     * @return New Decision Tree.
+     */
+    public DecisionTree(ArrayList<Example> s, String classVar, String name, boolean chiSqr) {
         Examples = s;
         classVariable = classVar;
         HashMap<String, Boolean> attributeMap = new HashMap<>();
@@ -26,11 +36,21 @@ public class DecisionTree {
             attributeMap.put(attr, true);
         }
         attributeMap.remove(classVariable);
-        id = new JSONid(UUID.randomUUID());
+        long startTime = System.nanoTime();
         tree = buildTree(Examples, attributeMap, chiSqr);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;
+        id = new JSONid(name, UUID.randomUUID(), duration);
 
     }
 
+    /**
+     * Helper method for reducing example pools based on given criteria.
+     * @param examples List of examples to reduce.
+     * @param attr Attribute to narrow list on.
+     * @param b Attribute value to reduce list on.
+     * @return Subset of given example list;
+     */
     public ArrayList<Example> getSubset(ArrayList<Example> examples, String attr, Boolean b) {
         ArrayList<Example> result = new ArrayList<>();
         for(int i = 0; i < examples.size(); i++) {
@@ -43,7 +63,11 @@ public class DecisionTree {
 
 
 
-
+    /**
+     * Entropy calculation for given example subset.
+     * @param examples List of examples to calculate entropy of.
+     * @return Entropy of subset.
+     */
     private double entropy(ArrayList<Example> examples) {
         double yes = 0;
         double no = 0;
@@ -74,6 +98,12 @@ public class DecisionTree {
         return result;
     }
 
+    /**
+     * Information gain calculation for given example list.
+     * @param examples Example list to calculate information gain on.
+     * @param subAttr Attribute to calculate IF on.
+     * @return Information Gain for given subset.
+     */
     public double gain(ArrayList<Example> examples, String subAttr) {
         double eNorm = entropy(examples);
         double eWeak = entropy(getSubset(examples, subAttr, false));
@@ -97,13 +127,23 @@ public class DecisionTree {
         return result;
     }
 
-
+    /**
+     * Helper method for logarithm calculation.
+     * @param num Number to take the log base 2 of.
+     * @return Log base 2 of input.
+     */
     private static double logBase2(double num) {
         return Math.log(num) / Math.log(2);
     }
 
 
-
+    /**
+     * Recursive tree construction using ID3 algorithm.
+     * @param examples List of training examples to build tree out of.
+     * @param attributes Remaining attributes to test for information gain.
+     * @param chiSqr Chi-square threshold switch.
+     * @return Built decision tree.
+     */
     private Node buildTree(ArrayList<Example> examples, HashMap<String, Boolean> attributes, boolean chiSqr) {
         Node root;
         int numPos = 0;
@@ -181,6 +221,11 @@ public class DecisionTree {
         return root;
     }
 
+    /**
+     * Helper method for keeping consistent copies of attribute lists in tree construction.
+     * @param map HashMap to make new copy of.
+     * @return Subset of given example list;
+     */
     public static HashMap<String, Boolean> copy(HashMap<String, Boolean> map) {
         HashMap<String, Boolean> result = new HashMap<>();
         for(String str : map.keySet()) {
@@ -189,56 +234,13 @@ public class DecisionTree {
         return result;
     }
 
-    public void printTree(Node root) {
-        if(root == null) {
-            return;
-        }
-        System.out.println(root.attribute);
-        printTree(root.no);
-        printTree(root.yes);
-    }
-
-    public String buildModel(Node root, String depth, String passedResult) {
-        String noAttr, yesAttr, result;
-        if(root.no == null || root.yes == null) {
-            return "Invalid Tree";
-        }
-        noAttr = root.no.attribute;
-        yesAttr = root.yes.attribute;
-        result = passedResult;
-
-
-        if(noAttr.equals("+")) {
-            result += depth + root.attribute + " = 0 : 1" + "\n";
-        }
-
-        else if(noAttr.equals("-")) {
-            result += depth + root.attribute + " = 0 : 0" + "\n";
-        }
-
-        else {
-            result += depth + root.attribute + " = 0" + "\n";
-            result = buildModel(root.no, depth + " | ", result);
-        }
-
-        if(yesAttr.equals("+")) {
-            result += depth + root.attribute + " = 1 : 1" + "\n";
-        }
-
-        else if(yesAttr.equals("-")) {
-            result += depth + root.attribute + " = 1 : 0" + "\n";
-        }
-
-        else {
-            result += depth + root.attribute + " = 1" + "\n";
-            result = buildModel(root.yes, depth + " | ", result);
-        }
-
-        return result;
-
-
-    }
-
+    /**
+     * Chi-square test calculation.
+     * @param examples Example list to calculate chi-square of
+     * @param e1
+     * @param e2
+     * @return Chi-square test result.
+     */
     public double chiSquare(ArrayList<Example> examples, ArrayList<Example> e1, ArrayList<Example> e2 ) {
 
         int n = 0;
@@ -299,6 +301,11 @@ public class DecisionTree {
         return  ((Math.pow(Ep1 - p1, 2))/Ep1) + ((Math.pow(En1 - n1, 2))/En1) +((Math.pow(Ep2 - p2, 2))/Ep2) + ((Math.pow(En2 - n2, 2))/En2);
     }
 
+    /**
+     * Test an example against the built tree.
+     * @param s Query example to test against tree.
+     * @return Predicted class label for given input query.
+     */
     public Boolean testExample(Example s) {
         Node cur = tree;
         while(!cur.attribute.equals("+") && !cur.attribute.equals("-")) {
@@ -317,31 +324,26 @@ public class DecisionTree {
 
     }
 
-    public void writeModel(File f) throws IOException {
-        FileWriter fWriter = new FileWriter(f);
-        PrintWriter pWriter = new PrintWriter(fWriter);
-        pWriter.println(buildModel(tree, "", ""));
-        pWriter.close();
-        fWriter.close();
-    }
-
-    public String getModel() {
-        return buildModel(tree, "", "");
-    }
-
-    public ArrayList<JSONNode> getJSON(Node cur, String parent) {
+    /**
+     * Recursively uilds JSON representation of tree for use in tree drawing on the client side.
+     * @param cur Current node in tree.
+     * @param parent Parent of current node in tree.
+     * @return List of nodes and their relationships with one another.
+     */
+    public ArrayList<JSONNode> getJSONNodes(Node cur, String parent) {
         if (cur == null) return new ArrayList<>();
         ArrayList<JSONNode> nodeValues = new ArrayList<>();
         nodeValues.add(new JSONNode(cur.attribute, parent));
-        nodeValues.addAll(getJSON(cur.no, cur.attribute));
-        nodeValues.addAll(getJSON(cur.yes, cur.attribute));
+        nodeValues.addAll(getJSONNodes(cur.no, cur.attribute));
+        nodeValues.addAll(getJSONNodes(cur.yes, cur.attribute));
         return nodeValues;
     }
 
-    public ArrayList<JSONNode> getNodes() {
-        return  getJSON(tree, "null");
-    }
 
+    /**
+     * Getter method for id object of tree containing name and key information.
+     * @return id
+     */
     public JSONid getID() {
         return id;
     }

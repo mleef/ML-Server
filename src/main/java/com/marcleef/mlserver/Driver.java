@@ -19,16 +19,30 @@ import com.marcleef.mlserver.Util.*;
  */
 public class Driver {
     public static void main(String[] args) {
+
+        // Route for new decision tree creation.
         post("/build/tree", new Route() {
             @Override
             public Object handle(Request request, Response response) {
-                //response.status(201);
                 response.header("Access-Control-Allow-Origin", "*");
                 JSONObject obj = new JSONObject(request.body());
+
+                // Get example and attribute lists from JSON.
                 JSONArray examples = obj.getJSONArray("examples");
                 JSONArray attributes = obj.getJSONArray("attributes");
-                DecisionTree dt = new DecisionTree(Converter.JSONtoExampleList(attributes, examples), attributes.get(attributes.length() - 1).toString(), false);
-                return dt.getNodes();
+
+                // Get name and class value of incoming Decision Tree.
+                String name = obj.getString("name");
+                String classVariable = attributes.get(attributes.length() - 1).toString();
+
+                // Convert JSON to training set readable by the decision tree class.
+                ArrayList<Example> trainingSet = Converter.JSONtoExampleList(attributes, examples);
+
+                // Build decision tree.
+                DecisionTree dt = new DecisionTree(trainingSet, classVariable, name, false);
+
+                // Send back info and key to client.
+                return dt.getID();
             }
         }, new JsonUtil());
     }
