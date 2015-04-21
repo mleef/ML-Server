@@ -5,16 +5,15 @@ package com.marcleef.mlserver.MachineLearning;
  * Decision Tree build and query logic implementation.
  */
 import java.util.*;
-import java.io.*;
 
 import com.marcleef.mlserver.Util.*;
-import com.marcleef.mlserver.Util.JSON.JSONNode;
+import com.marcleef.mlserver.Util.JSON.JSONTreeNode;
 import com.marcleef.mlserver.Util.JSON.JSONid;
 
-public class DecisionTree {
+public class DecisionTree extends Model {
 
     ArrayList<Example> Examples;
-    static Node tree;
+    static TreeNode tree;
     private final double CHI_SQUARE_THRESHOLD = 3.84;
     private  String classVariable;
     private JSONid id;
@@ -144,8 +143,8 @@ public class DecisionTree {
      * @param chiSqr Chi-square threshold switch.
      * @return Built decision tree.
      */
-    private Node buildTree(ArrayList<Example> examples, HashMap<String, Boolean> attributes, boolean chiSqr) {
-        Node root;
+    private TreeNode buildTree(ArrayList<Example> examples, HashMap<String, Boolean> attributes, boolean chiSqr) {
+        TreeNode root;
         int numPos = 0;
         int numNeg = 0;
         for(int i = 0; i < examples.size(); i++) {
@@ -160,20 +159,20 @@ public class DecisionTree {
 
         // Check for all positive examples
         if(numNeg == 0) {
-            return new Node("+");
+            return new TreeNode("+");
         }
 
         // Check for all negative examples
         else if(numPos == 0) {
-            return new Node("-");
+            return new TreeNode("-");
         }
 
         // Check for no attributes
         if(attributes.size() == 0) {
             if(numPos > numNeg) {
-                return new Node("+");
+                return new TreeNode("+");
             }
-            return new Node("-");
+            return new TreeNode("-");
         }
 
         // rootAttr is the attribute that best classifies examples (highest gain)
@@ -191,7 +190,7 @@ public class DecisionTree {
 
         // Remove highest gain attribute from consideration
         attributes.remove(rootAttr);
-        root = new Node(rootAttr);
+        root = new TreeNode(rootAttr);
 
         ArrayList<Example> posExamples = getSubset(examples, rootAttr, true);
         ArrayList<Example> negExamples = getSubset(examples, rootAttr, false);
@@ -208,9 +207,9 @@ public class DecisionTree {
             }
             else {
                 if(numPos > numNeg) {
-                    return new Node("+");
+                    return new TreeNode("+");
                 }
-                return new Node("-");
+                return new TreeNode("-");
             }
         }
         else {
@@ -307,7 +306,7 @@ public class DecisionTree {
      * @return Predicted class label for given input query.
      */
     public Boolean testExample(Example s) {
-        Node cur = tree;
+        TreeNode cur = tree;
         while(!cur.attribute.equals("+") && !cur.attribute.equals("-")) {
             if(s.getValue(cur.attribute)) {
                 cur = cur.yes;
@@ -325,15 +324,15 @@ public class DecisionTree {
     }
 
     /**
-     * Recursively uilds JSON representation of tree for use in tree drawing on the client side.
+     * Recursively builds JSON representation of tree for use in tree drawing on the client side.
      * @param cur Current node in tree.
      * @param parent Parent of current node in tree.
      * @return List of nodes and their relationships with one another.
      */
-    public ArrayList<JSONNode> getJSONNodes(Node cur, String parent) {
+    public ArrayList<JSONTreeNode> getJSONNodes(TreeNode cur, String parent) {
         if (cur == null) return new ArrayList<>();
-        ArrayList<JSONNode> nodeValues = new ArrayList<>();
-        nodeValues.add(new JSONNode(cur.attribute, parent));
+        ArrayList<JSONTreeNode> nodeValues = new ArrayList<>();
+        nodeValues.add(new JSONTreeNode(cur.attribute, parent));
         nodeValues.addAll(getJSONNodes(cur.no, cur.attribute));
         nodeValues.addAll(getJSONNodes(cur.yes, cur.attribute));
         return nodeValues;

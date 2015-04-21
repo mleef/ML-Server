@@ -5,12 +5,12 @@ package com.marcleef.mlserver.Util;
  * Node objects for decision tree structure.
  */
 
-public class Node {
+public class TreeNode {
     public String attribute;
-    public Node no;
-    public Node yes;
+    public TreeNode no;
+    public TreeNode yes;
 
-    public Node(String a) {
+    public TreeNode(String a) {
         attribute = a;
         no = null;
         yes = null;

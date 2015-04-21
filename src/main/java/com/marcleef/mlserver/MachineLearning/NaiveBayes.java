@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 import com.marcleef.mlserver.Util.Example;
 
-public class NaiveBayes {
+public class NaiveBayes  extends Model {
     ArrayList<ArrayList<Boolean>> Examples;
     static ArrayList<Double> trainedWeights;
     private double baseWeight;

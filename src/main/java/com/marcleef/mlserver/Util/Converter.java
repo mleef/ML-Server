@@ -14,7 +14,14 @@ public final class Converter {
 
     }
 
-    public static ArrayList<Example> JSONtoExampleList(JSONArray attrs, JSONArray exmps) {
+    /**
+     * Converts JSON objects into Decision Tree readable example lists.
+     * @param attrs Attributes of incoming examples.
+     * @param exmps Examples to convert.
+     * @throws org.json.JSONException
+     * @return Correctly constructed example list.
+     */
+    public static ArrayList<Example> JSONtoExampleList(JSONArray attrs, JSONArray exmps) throws JSONException {
         ArrayList<Example> examples = new ArrayList<Example>();
         String[] attributes = new String[attrs.length()];
         for(int i = 0; i < attrs.length(); i++) {
@@ -25,15 +32,20 @@ public final class Converter {
             String line[] = exmps.get(i).toString().split(",");
             Boolean list[] = new Boolean[line.length];
             for(int j = 0; j < line.length; j++) {
-                if(Integer.parseInt(line[j]) == 1) {
-                    list[j] = true;
+                try {
+                    if (Integer.parseInt(line[j]) == 1) {
+                        list[j] = true;
+                    } else {
+                        list[j] = false;
+                    }
                 }
-                else {
-                    list[j] = false;
+                catch (NumberFormatException e) {
+                    throw new JSONException("Non integer values detected.");
                 }
             }
             examples.add(new Example(attributes, list));
         }
         return examples;
     }
+
 }

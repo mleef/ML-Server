@@ -14,7 +14,7 @@ import java.util.Random;
 import com.marcleef.mlserver.Util.Example;
 
 
-public class Perceptron {
+public class Perceptron extends Model {
     ArrayList<ArrayList<Boolean>> Examples;
     static ArrayList<Double> trainedWeights;
     private static final double THRESHOLD = .5;
