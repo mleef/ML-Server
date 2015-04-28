@@ -2,6 +2,7 @@ package com.marcleef.mlserver.Managers;
 import com.marcleef.mlserver.MachineLearning.DecisionTree;
 import com.marcleef.mlserver.MachineLearning.Model;
 import com.marcleef.mlserver.Util.JSON.JSONResult;
+import com.marcleef.mlserver.Util.JSON.Token;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,7 +18,8 @@ import java.util.HashMap;
  */
 public final class UserManager {
     private Connection connection;
-    private static final String SQL_CHECK_USER = "SELECT * FROM user WHERE username = ?";
+
+    private static final String SQL_GET_USER = "SELECT * FROM user WHERE username = ?";
     private static final String SQL_NEW_USER = "INSERT INTO user(username, password, lastLogin, modified, created) VALUES (?, ?, ?, ?, ?)";
 
     public UserManager() throws ClassNotFoundException,
@@ -34,7 +36,7 @@ public final class UserManager {
 
         // Check for uniqueness of user name
         PreparedStatement checkAvailibility = connection
-                .prepareStatement(SQL_CHECK_USER);
+                .prepareStatement(SQL_GET_USER);
         checkAvailibility.setString(1, name);
         checkAvailibility.execute();
         ResultSet rs = checkAvailibility.getResultSet();
@@ -58,6 +60,38 @@ public final class UserManager {
         pstmt.close();
 
         return new JSONResult("Success", "User registered.");
+    }
+
+
+    public Token loginUser(String name, String password) throws SQLException {
+        // Check for uniqueness of user name
+        PreparedStatement checkAvailibility = connection
+                .prepareStatement(SQL_GET_USER);
+        checkAvailibility.setString(1, name);
+        checkAvailibility.execute();
+        ResultSet rs = checkAvailibility.getResultSet();
+
+        // Validate password.
+        if(rs.next()) {
+            if(rs.getString("password").equals(password)) {
+                // Update last login of user.
+                java.util.Date curDate= new java.util.Date();
+                Timestamp curTS = new Timestamp(curDate.getTime());
+                rs.updateTimestamp("lastLogin", curTS);
+
+                // Add a day to the current time.
+                Timestamp expTS = new Timestamp(curDate.getTime() + (1000 * 60 * 60 * 24));
+                Token t = new Token(expTS.toString());
+                return t;
+            }
+            else {
+                throw new SQLException();
+            }
+        }
+        else {
+            throw new SQLException();
+        }
+
     }
 
     //TODO: Validate token method.

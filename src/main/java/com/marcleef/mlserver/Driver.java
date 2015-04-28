@@ -19,6 +19,9 @@ public class Driver {
             // Listen for POST requests for new user registration.
             rm.newUserListener();
 
+            // Listen for POST requests for user login.
+            rm.userLoginListener();
+
             // Listen for POST requests for decision tree creation.
             rm.decisionTreeBuildListener();
 

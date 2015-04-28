@@ -9,7 +9,8 @@ import java.io.Serializable;
 
 import com.marcleef.mlserver.Util.*;
 import com.marcleef.mlserver.Util.JSON.JSONTreeNode;
-import com.marcleef.mlserver.Util.JSON.JSONid;
+import com.marcleef.mlserver.Util.JSON.Token;
+import org.json.JSONArray;
 
 public class DecisionTree extends Model implements Serializable {
 
@@ -17,7 +18,7 @@ public class DecisionTree extends Model implements Serializable {
     private TreeNode tree;
     private final double CHI_SQUARE_THRESHOLD = 3.84;
     private  String classVariable;
-    private JSONid id;
+    private HashMap<String, Boolean> attributeMap;
 
 
     /**
@@ -31,16 +32,12 @@ public class DecisionTree extends Model implements Serializable {
     public DecisionTree(ArrayList<Example> s, String classVar, String name, boolean chiSqr) {
         Examples = s;
         classVariable = classVar;
-        HashMap<String, Boolean> attributeMap = new HashMap<>();
+        attributeMap = new HashMap<>();
         for(String attr : Examples.get(0).getAttributes()) {
             attributeMap.put(attr, true);
         }
         attributeMap.remove(classVariable);
-        long startTime = System.nanoTime();
         tree = buildTree(Examples, attributeMap, chiSqr);
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime)/1000000;
-        id = new JSONid(name, UUID.randomUUID());
 
     }
 
@@ -341,20 +338,11 @@ public class DecisionTree extends Model implements Serializable {
 
 
     /**
-     * Getter method for id object of tree containing name and key information.
-     * @return id
+     * Getter method for attribute information.
+     * @return Attributes in JSONArray format.
      */
-    public JSONid getID() {
-        return id;
+    public JSONArray getAttributes() {
+        return new JSONArray(attributeMap.keySet().toArray(new String[0]));
     }
 
-    @Override
-    public String getName() {
-        return id.getName();
-    }
-
-    @Override
-    public String getKey() {
-        return id.getKey();
-    }
 }

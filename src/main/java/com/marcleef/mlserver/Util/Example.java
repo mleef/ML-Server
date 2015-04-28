@@ -1,5 +1,7 @@
 package com.marcleef.mlserver.Util;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.Serializable;
@@ -27,6 +29,7 @@ public class Example implements Serializable {
     public Boolean getValue(String attr) {
         return map.get(attr);
     }
+
 
     /**
      * Getter for example attributes.

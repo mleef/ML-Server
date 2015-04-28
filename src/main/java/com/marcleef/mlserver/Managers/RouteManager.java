@@ -7,6 +7,8 @@ import org.json.*;
 
 import static spark.Spark.get;
 import static spark.Spark.post;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 
@@ -97,8 +99,8 @@ public final class RouteManager {
             // Save to db.
             modelManager.serializeModelToDB(dt, token);
 
-            // Send back info and key to client.
-            return dt.getID();
+            // Send back results to the client.
+            return new JSONResult("Success", "Tree built successfully.");
         }, new JSONUtil());
     }
 
@@ -152,8 +154,6 @@ public final class RouteManager {
                 return new JSONResult("Error", "No name attribute specified.");
             }
 
-            // Read in test examples to query.
-            ArrayList<Example> testSet = Converter.JSONtoExampleList(attributes, examples);
 
             // Get decision tree from database.
             Model m = modelManager.deSerializeModelFromDB(name, token);
@@ -163,6 +163,8 @@ public final class RouteManager {
             // Query decision tree and build up result list.
             if (m instanceof DecisionTree) {
                 dt = (DecisionTree) m;
+                // Read in test examples to query.
+                ArrayList<Example> testSet = Converter.JSONtoExampleList(dt.getAttributes(), examples);
                 for (Example e : testSet) {
                     results.add(dt.testExample(e) ? '1' : '0');
                 }
@@ -212,6 +214,61 @@ public final class RouteManager {
 
             if(username.length() > 0 && password.length() > 0) {
                 return userManager.registerNewUser(username, password);
+            }
+            else {
+                return new JSONResult("Error", "0 length username or password.");
+            }
+
+
+
+        }, new JSONUtil());
+
+    }
+
+    /**
+     * Listens for and handles requests login users and generate tokens.
+     */
+    public void userLoginListener() {
+        post("/user/login", (request, response) -> {
+            response.header("Access-Control-Allow-Origin", "*");
+            ;
+            JSONObject obj;
+            String username = "";
+            String password = "";
+
+            // Get JSONObject for easy parsing.
+            try {
+                obj = new JSONObject(request.body());
+            } catch (JSONException e) {
+                response.status(404);
+                return new JSONResult("Error", "Invalid JSON.");
+            }
+
+            // Get username.
+            try {
+                username = obj.getString("username");
+            } catch (JSONException e) {
+                response.status(404);
+                return new JSONResult("Error", "Missing username.");
+            }
+
+            // Get username.
+            try {
+                password = obj.getString("password");
+            } catch (JSONException e) {
+                response.status(404);
+                return new JSONResult("Error", "Missing password.");
+            }
+
+            // Return new token to user.
+            if(username.length() > 0 && password.length() > 0) {
+                try {
+                    return userManager.loginUser(username, password);
+                }
+                catch(SQLException e) {
+                    response.status(404);
+                    return new JSONResult("Error", "Incorrect username/password combination.");
+                }
             }
             else {
                 return new JSONResult("Error", "0 length username or password.");
