@@ -40,7 +40,7 @@ public class DecisionTree extends Model implements Serializable {
         tree = buildTree(Examples, attributeMap, chiSqr);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime)/1000000;
-        id = new JSONid(name, UUID.randomUUID(), duration);
+        id = new JSONid(name, UUID.randomUUID());
 
     }
 

@@ -24,8 +24,8 @@ import java.util.HashMap;
 public final class ModelManager {
     private static Connection connection;
     private HashMap<String, Model> models;
-    private static final String SQL_SERIALIZE_MODEL = "INSERT INTO dt(name, uuid, serialized_object) VALUES (?, ?, ?)";
-    private static final String SQL_DESERIALIZE_MODEL = "SELECT serialized_object FROM dt WHERE uuid = ?";
+    private static final String SQL_SERIALIZE_MODEL = "INSERT INTO dt(username, name, serialized_object) VALUES (?, ?, ?)";
+    private static final String SQL_DESERIALIZE_MODEL = "SELECT serialized_object FROM dt WHERE username = ? AND treename = ?";
 
     public ModelManager() throws ClassNotFoundException,
             SQLException, IOException {
@@ -37,14 +37,15 @@ public final class ModelManager {
         Class.forName(driver);
         connection = DriverManager.getConnection(url, username, password);
     }
-    public static long serializeModelToDB(Model m) throws SQLException {
+    public static long serializeModelToDB(Model m, String token) throws SQLException {
 
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_SERIALIZE_MODEL);
 
         // just setting the class name
-        pstmt.setString(1, m.getName());
-        pstmt.setString(2, m.getKey());
+        //TODO: Get username using token.
+        pstmt.setString(1, "");
+        pstmt.setString(2, m.getName());
         pstmt.setObject(3, m);
         pstmt.executeUpdate();
         ResultSet rs = pstmt.getGeneratedKeys();
@@ -65,11 +66,14 @@ public final class ModelManager {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static Model deSerializeModelFromDB(String id) throws SQLException, IOException,
+    public static Model deSerializeModelFromDB(String treename, String token) throws SQLException, IOException,
             ClassNotFoundException {
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_DESERIALIZE_MODEL);
-        pstmt.setString(1, id);
+        pstmt.setString(1, treename);
+
+        //TODO: Get username using token.
+        pstmt.setString(2, "");
         ResultSet rs = pstmt.executeQuery();
         rs.next();
 

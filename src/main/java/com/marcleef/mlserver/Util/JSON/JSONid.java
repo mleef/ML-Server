@@ -12,12 +12,9 @@ public class JSONid implements Serializable {
     private String key;
     private String timeCreated;
     private String timeElapsed;
-    public JSONid(String n, UUID identifier, long time) {
+    public JSONid(String n, UUID identifier) {
         name = n;
-        java.util.Date date = new java.util.Date();
-        timeCreated = new Timestamp(date.getTime()).toString();
         key = String.valueOf(identifier);
-        timeElapsed = String.valueOf(time);
     }
 
     public String getName() {

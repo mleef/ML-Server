@@ -1,6 +1,7 @@
 package com.marcleef.mlserver;
 import com.marcleef.mlserver.Managers.ModelManager;
 import com.marcleef.mlserver.Managers.RouteManager;
+import com.marcleef.mlserver.Managers.UserManager;
 
 import static spark.Spark.post;
 
@@ -14,7 +15,9 @@ public class Driver {
 
         // Create new route and model managers.
         try {
-            RouteManager rm = new RouteManager(new ModelManager());
+            RouteManager rm = new RouteManager(new ModelManager(), new UserManager());
+            // Listen for POST requests for new user registration.
+            rm.newUserListener();
 
             // Listen for POST requests for decision tree creation.
             rm.decisionTreeBuildListener();
