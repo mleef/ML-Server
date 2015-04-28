@@ -72,7 +72,7 @@ public final class ModelManager {
         pstmt.setString(1, id);
         ResultSet rs = pstmt.executeQuery();
         rs.next();
-        
+
 
         byte[] buf = rs.getBytes(1);
         ObjectInputStream objectIn = null;
@@ -87,5 +87,7 @@ public final class ModelManager {
         System.out.println("Java object de-serialized from database. ");
         return m;
     }
+
+    //TODO: Save attributes in database so user doesn't need to send them everytime.
 
 }

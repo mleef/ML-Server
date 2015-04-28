@@ -150,6 +150,8 @@ public final class RouteManager {
                 }
             }
 
+            // TODO: Error checking on query examples.
+
             // Send back results.
             return new JSONQueryResult(results);
         }, new JSONUtil());
