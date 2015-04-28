@@ -1,6 +1,7 @@
 package com.marcleef.mlserver.Managers;
 import com.marcleef.mlserver.MachineLearning.DecisionTree;
 import com.marcleef.mlserver.Util.JSON.JSONFailure;
+import com.marcleef.mlserver.Util.JSON.JSONQueryResult;
 import com.marcleef.mlserver.Util.JSON.JSONUtil;
 import org.json.*;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 
 
 import com.marcleef.mlserver.Util.*;
+import com.marcleef.mlserver.MachineLearning.Model;
 import spark.Request;
 import spark.Response;
 
@@ -97,11 +99,9 @@ public final class RouteManager {
     public void decisionTreeQueryListener() {
         // Sample JSON for testing: {"attributes" : ["x"," y", "z"], "examples" : ["1,0,0", "1,1,1"]}
         // Route for querying existing decision tree.
-        get("/query/decision-tree/*", (request, response) -> {
+        post("/query/decision-tree", (request, response) -> {
             response.header("Access-Control-Allow-Origin", "*");
 
-            // Get name of tree from route.
-            String treeName = request.splat()[0];
             JSONArray examples;
             JSONArray attributes;
             JSONObject obj;
@@ -110,8 +110,7 @@ public final class RouteManager {
             // Get JSONObject for easy parsing.
             try {
                 obj = new JSONObject(request.body());
-            }
-            catch (JSONException e) {
+            } catch (JSONException e) {
                 response.status(404);
                 return new JSONFailure(("Invalid JSON."));
             }
@@ -130,16 +129,29 @@ public final class RouteManager {
             // Get API key from request.
             try {
                 key = obj.getString("key");
-            }
-            catch(JSONException e) {
+            } catch (JSONException e) {
                 response.status(404);
                 return new JSONFailure(("Invalid key."));
             }
 
+            // Read in test examples to query.
             ArrayList<Example> testSet = Converter.JSONtoExampleList(attributes, examples);
 
-            // TODO: Confirm validity of name/key combination, query tree, build result JSON, send back to client.
-            return null;
+            // Get decision tree from database.
+            Model m = manager.deSerializeModelFromDB(key.replace("-", ""));
+            DecisionTree dt;
+            ArrayList<Character> results = new ArrayList<Character>();
+
+            // Query decision tree and build up result list.
+            if (m instanceof DecisionTree) {
+                dt = (DecisionTree) m;
+                for (Example e : testSet) {
+                    results.add(dt.testExample(e) ? '1' : '0');
+                }
+            }
+
+            // Send back results.
+            return new JSONQueryResult(results);
         }, new JSONUtil());
     }
 

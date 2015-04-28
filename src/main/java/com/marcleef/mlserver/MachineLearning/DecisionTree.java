@@ -14,7 +14,7 @@ import com.marcleef.mlserver.Util.JSON.JSONid;
 public class DecisionTree extends Model implements Serializable {
 
     ArrayList<Example> Examples;
-    static TreeNode tree;
+    private TreeNode tree;
     private final double CHI_SQUARE_THRESHOLD = 3.84;
     private  String classVariable;
     private JSONid id;

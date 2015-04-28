@@ -18,6 +18,9 @@ public class Driver {
 
             // Listen for POST requests for decision tree creation.
             rm.decisionTreeBuildListener();
+
+            // Listen for POST requests for tree querying.
+            rm.decisionTreeQueryListener();
         }
         catch (Exception e) {
 

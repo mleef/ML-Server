@@ -25,6 +25,6 @@ public class JSONid implements Serializable {
     }
 
     public String getKey() {
-        return key;
+        return key.replace("-", "");
     }
 }

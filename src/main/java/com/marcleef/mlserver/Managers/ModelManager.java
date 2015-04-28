@@ -1,5 +1,6 @@
 package com.marcleef.mlserver.Managers;
 
+import com.marcleef.mlserver.MachineLearning.DecisionTree;
 import com.marcleef.mlserver.MachineLearning.Model;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public final class ModelManager {
     private static Connection connection;
     private HashMap<String, Model> models;
     private static final String SQL_SERIALIZE_MODEL = "INSERT INTO dt(name, uuid, serialized_object) VALUES (?, ?, ?)";
-    private static final String SQL_DESERIALIZE_MODEL = "SELECT serialized_object FROM dt WHERE name = ?";
+    private static final String SQL_DESERIALIZE_MODEL = "SELECT serialized_object FROM dt WHERE uuid = ?";
 
     public ModelManager() throws ClassNotFoundException,
             SQLException, IOException {
@@ -64,15 +65,14 @@ public final class ModelManager {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static Model deSerializeJavaObjectFromDB(String name) throws SQLException, IOException,
+    public static Model deSerializeModelFromDB(String id) throws SQLException, IOException,
             ClassNotFoundException {
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_DESERIALIZE_MODEL);
-        pstmt.setString(1, name);
+        pstmt.setString(1, id);
         ResultSet rs = pstmt.executeQuery();
         rs.next();
-
-        // Object object = rs.getObject(1);
+        
 
         byte[] buf = rs.getBytes(1);
         ObjectInputStream objectIn = null;
