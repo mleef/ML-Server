@@ -11,11 +11,19 @@ import static spark.Spark.post;
 
 public class Driver {
     public static void main(String[] args) {
-        // Create new route and model managers.
-        RouteManager rm = new RouteManager(new ModelManager());
 
-        // Listen for POST requests for decision tree creation.
-        rm.decisionTreeBuildListener();
+        // Create new route and model managers.
+        try {
+            RouteManager rm = new RouteManager(new ModelManager());
+
+            // Listen for POST requests for decision tree creation.
+            rm.decisionTreeBuildListener();
+        }
+        catch (Exception e) {
+
+        }
+
+
     }
 
 

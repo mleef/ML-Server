@@ -2,12 +2,12 @@ package com.marcleef.mlserver.Util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.io.Serializable;
 /**
  * Created by marc_leef on 4/15/15.
  * Training/Test example objects.
  */
-public class Example {
+public class Example implements Serializable {
 
     private HashMap<String, Boolean> map = new HashMap<String, Boolean>();
     private ArrayList<Boolean> vector;

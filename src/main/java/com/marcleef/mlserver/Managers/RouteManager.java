@@ -83,10 +83,14 @@ public final class RouteManager {
             // Build decision tree.
             DecisionTree dt = new DecisionTree(trainingSet, classVariable, name, false);
 
+            // Save to db.
+            manager.serializeModelToDB(dt);
+
             // Send back info and key to client.
             return dt.getID();
         }, new JSONUtil());
     }
+
     /**
      * Listens for and handles requests to query existing decision tree.
      */

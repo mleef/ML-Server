@@ -5,12 +5,13 @@ package com.marcleef.mlserver.MachineLearning;
  * Decision Tree build and query logic implementation.
  */
 import java.util.*;
+import java.io.Serializable;
 
 import com.marcleef.mlserver.Util.*;
 import com.marcleef.mlserver.Util.JSON.JSONTreeNode;
 import com.marcleef.mlserver.Util.JSON.JSONid;
 
-public class DecisionTree extends Model {
+public class DecisionTree extends Model implements Serializable {
 
     ArrayList<Example> Examples;
     static TreeNode tree;
@@ -347,5 +348,13 @@ public class DecisionTree extends Model {
         return id;
     }
 
+    @Override
+    public String getName() {
+        return id.getName();
+    }
 
+    @Override
+    public String getKey() {
+        return id.getKey();
+    }
 }
