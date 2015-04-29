@@ -19,7 +19,10 @@ import java.util.HashMap;
 public final class UserManager {
     private Connection connection;
 
+    private static final int DAY_LENGTH = 86400000;
     private static final String SQL_GET_USER = "SELECT * FROM user WHERE username = ?";
+    private static final String SQL_GET_TOKEN = "SELECT * FROM authToken WHERE token = ?";
+    private static final String SQL_NEW_TOKEN = "INSERT INTO authToken(userId, token, created) VALUES (?, ?, ?)";
     private static final String SQL_NEW_USER = "INSERT INTO user(username, password, lastLogin, modified, created) VALUES (?, ?, ?, ?, ?)";
 
     public UserManager() throws ClassNotFoundException,
@@ -79,9 +82,22 @@ public final class UserManager {
                 Timestamp curTS = new Timestamp(curDate.getTime());
                 rs.updateTimestamp("lastLogin", curTS);
 
+                // Get user ID to update authentication table.
+                int userID = rs.getInt("id");
+
                 // Add a day to the current time.
-                Timestamp expTS = new Timestamp(curDate.getTime() + (1000 * 60 * 60 * 24));
+                Timestamp expTS = new Timestamp(curDate.getTime() + DAY_LENGTH);
+
+                // Generate new token and set expiration.
                 Token t = new Token(expTS.toString());
+
+                // Place new token with user id and timestamp into DB.
+                PreparedStatement newToken = connection
+                        .prepareStatement(SQL_NEW_TOKEN);
+                newToken.setInt(1, userID);
+                newToken.setString(2, t.getKey());
+                newToken.setTimestamp(3, curTS);
+                newToken.execute();
                 return t;
             }
             else {
@@ -94,11 +110,34 @@ public final class UserManager {
 
     }
 
-    //TODO: Validate token method.
-    public String authenticateUser(String token) {
+    public boolean authenticateUser(String token) throws SQLException{
 
-        //should return username if found and valid, otherwise null.
-        return null;
+        // Check for uniqueness of user name
+        PreparedStatement authenticate = connection
+                .prepareStatement(SQL_GET_TOKEN);
+        authenticate.setString(1, token);
+        authenticate.execute();
+
+        java.util.Date curDate= new java.util.Date();
+
+        // Add a day to the current time.
+        Timestamp expTS = new Timestamp(curDate.getTime() + DAY_LENGTH);
+
+        ResultSet rs = authenticate.getResultSet();
+
+        if(rs.next()) {
+            // Check if token has expired.
+            if(rs.getTimestamp("created").before(expTS)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
     }
+
 
 }

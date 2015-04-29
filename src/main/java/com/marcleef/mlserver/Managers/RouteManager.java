@@ -81,6 +81,11 @@ public final class RouteManager {
                 return new JSONResult("Error", "No name attribute specified.");
             }
 
+            // Authenticate token.
+            if(!userManager.authenticateUser(token)) {
+                response.status(401);
+                return new JSONResult("Error", "Token has expired or does not exist.");
+            }
             // Get class variable value.
             classVariable = attributes.get(attributes.length() - 1).toString();
 
@@ -152,6 +157,12 @@ public final class RouteManager {
             } catch (JSONException e) {
                 response.status(404);
                 return new JSONResult("Error", "No name attribute specified.");
+            }
+
+            // Authenticate token.
+            if(!userManager.authenticateUser(token)) {
+                response.status(401);
+                return new JSONResult("Error", "Token has expired or does not exist.");
             }
 
 
