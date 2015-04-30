@@ -44,4 +44,30 @@ public final class Converter {
         return examples;
     }
 
+    /**
+     * Converts JSON objects of examples into readable example lists.
+     * @param attrs Attributes of incoming examples.
+     * @param exmps Examples to convert.
+     * @throws org.json.JSONException
+     * @return Correctly constructed example list.
+     */
+    public static ArrayList<Example> toExampleList(String[] attrs, JSONArray exmps) throws JSONException {
+        ArrayList<Example> examples = new ArrayList<Example>();
+
+        for(int i = 0; i < exmps.length(); i++) {
+            String line[] = exmps.get(i).toString().split(",");
+            Boolean list[] = new Boolean[line.length];
+            for(int j = 0; j < line.length; j++) {
+                try {
+                    list[j] = Integer.parseInt(line[j]) == 1;
+                }
+                catch (NumberFormatException e) {
+                    throw new JSONException("Non integer values detected.");
+                }
+            }
+            examples.add(new Example(attrs, list));
+        }
+        return examples;
+    }
+
 }

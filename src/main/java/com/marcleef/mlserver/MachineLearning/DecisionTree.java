@@ -18,6 +18,7 @@ public class DecisionTree extends Model implements Serializable {
     ArrayList<Example> Examples;
     private TreeNode tree;
     private final double CHI_SQUARE_THRESHOLD = 3.84;
+    private String treeName;
     private  String classVariable;
     private HashMap<String, Boolean> attributeMap;
 
@@ -32,6 +33,7 @@ public class DecisionTree extends Model implements Serializable {
      */
     public DecisionTree(ArrayList<Example> s, String classVar, String name, boolean chiSqr) {
         Examples = s;
+        treeName = name;
         classVariable = classVar;
         attributeMap = new HashMap<>();
         for(String attr : Examples.get(0).getAttributes()) {
@@ -320,6 +322,19 @@ public class DecisionTree extends Model implements Serializable {
     }
 
     /**
+     * Test a list of examples.
+     * @param testSet Query examples to test against tree.
+     * @return List of predicted labels for test examples.
+     */
+    public ArrayList<Character> batchQuery(ArrayList<Example> testSet) {
+        ArrayList<Character> results = new ArrayList<Character>();
+        for (Example e : testSet) {
+            results.add(this.testExample(e) ? '1' : '0');
+        }
+        return results;
+    }
+
+    /**
      * Recursively builds JSON representation of tree for use in tree drawing on the client side.
      * @param cur Current node in tree.
      * @param parent Parent of current node in tree.
@@ -337,10 +352,14 @@ public class DecisionTree extends Model implements Serializable {
 
     /**
      * Getter method for attribute information.
-     * @return Attributes in JSONArray format.
+     * @return Attributes in string array.
      */
-    public JSONArray getJSONAttributes() {
-        return new JSONArray(attributeMap.keySet().toArray(new String[0]));
+    public String[] getAttributes() {
+        return Examples.get(0).getAttributes();
     }
 
+    @Override
+    public String getName() {
+        return treeName;
+    }
 }

@@ -15,7 +15,7 @@ import java.util.HashMap;
 public final class UserManager {
     private Connection connection;
 
-    private static final int DAY_LENGTH = 86400000;
+    private static final int TOKEN_LIFE = 86400000;
     private static final String SQL_GET_USER = "SELECT * FROM user WHERE username = ?";
     private static final String SQL_GET_USER_BY_ID = "SELECT * FROM user WHERE id = ?";
     private static final String SQL_GET_TOKEN = "SELECT * FROM authToken WHERE token = ?";
@@ -32,6 +32,13 @@ public final class UserManager {
         connection = DriverManager.getConnection(url, username, password);
     }
 
+    /**
+     * Register a new user to the database.
+     * @throws SQLException
+     * @param name Username of new user.
+     * @param password Password of new user.
+     * @returns JSONResult specifying success or failure of registration.
+     */
     public JSONResult registerNewUser(String name, String password) throws SQLException {
 
         // Check for uniqueness of user name
@@ -63,7 +70,13 @@ public final class UserManager {
         return new JSONResult("Success", "User registered.");
     }
 
-
+    /**
+     * Login user to the database and generate token.
+     * @throws SQLException
+     * @param name Username of user.
+     * @param password Password of user.
+     * @returns New token that expires after 24 hours.
+     */
     public Token loginUser(String name, String password) throws SQLException {
         // Check for uniqueness of user name
         PreparedStatement checkAvailibility = connection
@@ -83,7 +96,7 @@ public final class UserManager {
                 rs.updateTimestamp("lastLogin", curTS);
                 rs.updateRow();
                 // Add a day to the current time.
-                Timestamp expTS = new Timestamp(curDate.getTime() + DAY_LENGTH);
+                Timestamp expTS = new Timestamp(curDate.getTime() + TOKEN_LIFE);
 
                 // Generate new token and set expiration.
                 Token t = new Token(expTS.toString());
@@ -113,6 +126,12 @@ public final class UserManager {
 
     }
 
+    /**
+     * Authenticate user submitted token.
+     * @throws SQLException
+     * @param token User's unique API token.
+     * @returns Username associated with token.
+     */
     public String authenticateUser(String token) throws SQLException{
 
         // Check for token.
@@ -138,18 +157,22 @@ public final class UserManager {
                     return results.getString("username");
                 }
                 else {
-                    return "";
+                    return null;
                 }
             }
             else {
-                return "";
+                return null;
             }
         }
         else {
-            return "";
+            return null;
         }
     }
 
+    /**
+     * Helper method for generating current timestamp.
+     * @returns Timestamp object that represents current time.
+     */
     private static Timestamp getCurrentTime() {
         Date curDate= new java.util.Date();
         return new Timestamp(curDate.getTime());

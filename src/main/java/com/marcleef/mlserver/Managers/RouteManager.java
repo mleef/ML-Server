@@ -10,6 +10,7 @@ import static spark.Spark.post;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 
 import com.marcleef.mlserver.Util.*;
@@ -53,37 +54,22 @@ public final class RouteManager {
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
-            // Get example and attribute lists from JSON.
-            try {
-                examples = obj.getJSONArray("examples");
-                attributes = obj.getJSONArray("attributes");
-            }
-            // Make sure the appropriate properties are specified in the request.
-            catch (JSONException e) {
+            ArrayList<String> missingParams = validateJSON(obj, "examples", "attributes", "treename", "token");
+
+            if(missingParams.size() > 0) {
                 response.status(404);
-                return new JSONResult("Error", "Request did not contain examples or attributes property.");
+                return new JSONResult("Error", "Request did not contain required properties: " + missingParams.toString());
             }
 
-            // Get name of the incoming Decision Tree.
-            try {
-                treeName = obj.getString("name");
-            }
-            catch(JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "Request did not contain name property.");
-            }
+            examples = obj.getJSONArray("examples");
+            attributes = obj.getJSONArray("attributes");
+            treeName = obj.getString("treename");
+            token = obj.getString("token");
 
-            // Get API key from request.
-            try {
-                token = obj.getString("token");
-            } catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "No token included.");
-            }
 
             // Authenticate token.
             String username = userManager.authenticateUser(token);
-            if(!username.equals("")) {
+            if(username != null) {
                 // Get class variable value.
                 classVariable = attributes.get(attributes.length() - 1).toString();
 
@@ -100,7 +86,7 @@ public final class RouteManager {
                 DecisionTree dt = new DecisionTree(trainingSet, classVariable, treeName, false);
 
                 // Save to db.
-                ModelManager.serializeModelToDB(dt, username, treeName);
+                ModelManager.serializeModelToDB(dt, username);
 
                 // Send back results to the client.
                 return new JSONResult("Success", "Tree built successfully.");
@@ -135,36 +121,21 @@ public final class RouteManager {
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
-            // Get example and attribute lists from JSON.
-            try {
-                examples = obj.getJSONArray("examples");
-                attributes = obj.getJSONArray("attributes");
-            }
-            // Make sure the appropriate properties are specified in the request.
-            catch (JSONException e) {
+            ArrayList<String> missingParams = validateJSON(obj, "examples", "treename", "token");
+
+            if(missingParams.size() > 0) {
                 response.status(404);
-                return new JSONResult("Error", "Request did not contain examples or attributes property.");
+                return new JSONResult("Error", "Request did not contain required properties: " + missingParams.toString());
             }
 
-            // Get tree name from request.
-            try {
-                treeName = obj.getString("name");
-            } catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "No name attribute specified.");
-            }
+            examples = obj.getJSONArray("examples");
+            treeName = obj.getString("treename");
+            token = obj.getString("token");
 
-            // Get API key from request.
-            try {
-                token = obj.getString("token");
-            } catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "No token included.");
-            }
 
             // Authenticate token.
             String username = userManager.authenticateUser(token);
-            if(!username.equals("")) {
+            if(username != null) {
                 // Get decision tree from database.
                 try {
                     Model m = ModelManager.deSerializeModelFromDB(treeName, username);
@@ -174,10 +145,12 @@ public final class RouteManager {
                     if (m instanceof DecisionTree) {
                         dt = (DecisionTree) m;
                         // Read in test examples to query.
-                        ArrayList<Example> testSet = Converter.JSONtoExampleList(attributes, examples);
-                        for (Example e : testSet) {
-                            results.add(dt.testExample(e) ? '1' : '0');
-                        }
+                        ArrayList<Example> testSet = Converter.toExampleList(dt.getAttributes(), examples);
+                        results = dt.batchQuery(testSet);
+                    }
+                    else {
+                        response.status(404);
+                        return new JSONResult("Error", "Internal database error.");
                     }
                     // TODO: Error checking on query examples.
 
@@ -218,21 +191,15 @@ public final class RouteManager {
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
-            // Get username.
-            try {
-                username = obj.getString("username");
-            } catch (JSONException e) {
+            ArrayList<String> missingParams = validateJSON(obj, "username", "password");
+
+            if(missingParams.size() > 0) {
                 response.status(404);
-                return new JSONResult("Error", "Missing username.");
+                return new JSONResult("Error", "Request did not contain required properties: " + missingParams.toString());
             }
 
-            // Get username.
-            try {
-                password = obj.getString("password");
-            } catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "Missing password.");
-            }
+            username = obj.getString("username");
+            password = obj.getString("password");
 
             if(username.length() > 0 && password.length() > 0) {
                 return userManager.registerNewUser(username, password);
@@ -240,8 +207,6 @@ public final class RouteManager {
             else {
                 return new JSONResult("Error", "0 length username or password.");
             }
-
-
 
         }, new JSONUtil());
 
@@ -265,21 +230,15 @@ public final class RouteManager {
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
-            // Get username.
-            try {
-                username = obj.getString("username");
-            } catch (JSONException e) {
+            ArrayList<String> missingParams = validateJSON(obj, "username", "password");
+
+            if(missingParams.size() > 0) {
                 response.status(404);
-                return new JSONResult("Error", "Missing username.");
+                return new JSONResult("Error", "Request did not contain required properties: " + missingParams.toString());
             }
 
-            // Get username.
-            try {
-                password = obj.getString("password");
-            } catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "Missing password.");
-            }
+            username = obj.getString("username");
+            password = obj.getString("password");
 
             // Return new token to user.
             if(username.length() > 0 && password.length() > 0) {
@@ -301,5 +260,24 @@ public final class RouteManager {
 
     }
 
+    /**
+     * Helper method to verify incoming JSON has the correct parameters for the given listener.
+     * @param obj Incoming JSONObject.
+     * @param params Variable length list of required params for the given piece of JSON.
+     * @return Missing parameters.
+     */
+    private ArrayList<String> validateJSON(JSONObject obj, String... params) {
 
+        ArrayList<String> missingParams = new ArrayList<>();
+        for(String param : params) {
+            try {
+                obj.get(param);
+            }
+            catch (JSONException e) {
+                missingParams.add(param);
+            }
+        }
+        return missingParams;
+
+    }
 }

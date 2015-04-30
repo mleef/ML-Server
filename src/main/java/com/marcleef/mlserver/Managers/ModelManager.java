@@ -37,13 +37,20 @@ public final class ModelManager {
         Class.forName(driver);
         connection = DriverManager.getConnection(url, username, password);
     }
-    public static long serializeModelToDB(Model m, String username, String treename) throws SQLException {
+
+    /**
+     * To serialize a java object from database
+     * @throws SQLException
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static long serializeModelToDB(Model m, String username) throws SQLException {
 
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_SERIALIZE_MODEL);
 
         pstmt.setString(1, username);
-        pstmt.setString(2, treename);
+        pstmt.setString(2, m.getName());
         pstmt.setObject(3, m);
         pstmt.executeUpdate();
         ResultSet rs = pstmt.getGeneratedKeys();
@@ -53,13 +60,11 @@ public final class ModelManager {
         }
         rs.close();
         pstmt.close();
-        System.out.println("Saved serialized model to database.");
         return serialized_id;
     }
 
     /**
      * To de-serialize a java object from database
-     *
      * @throws SQLException
      * @throws IOException
      * @throws ClassNotFoundException
@@ -70,26 +75,25 @@ public final class ModelManager {
                 .prepareStatement(SQL_DESERIALIZE_MODEL);
         pstmt.setString(1, username);
 
-        //TODO: Get username using token.
         pstmt.setString(2, treename);
         ResultSet rs = pstmt.executeQuery();
-        rs.next();
 
+        if(rs.next()) {
+            byte[] buf = rs.getBytes(1);
+            ObjectInputStream objectIn = null;
+            if (buf != null)
+                objectIn = new ObjectInputStream(new ByteArrayInputStream(buf));
 
-        byte[] buf = rs.getBytes(1);
-        ObjectInputStream objectIn = null;
-        if (buf != null)
-            objectIn = new ObjectInputStream(new ByteArrayInputStream(buf));
+            Model m = (Model) objectIn.readObject();
 
-        Model m = (Model) objectIn.readObject();
+            rs.close();
+            pstmt.close();
 
-        rs.close();
-        pstmt.close();
+            return m;
+        }
 
-        System.out.println("Java object de-serialized from database. ");
-        return m;
+        return null;
     }
 
-    //TODO: Save attributes in database so user doesn't need to send them everytime.
 
 }
