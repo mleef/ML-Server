@@ -11,6 +11,7 @@ import com.marcleef.mlserver.Util.*;
 import com.marcleef.mlserver.Util.JSON.JSONTreeNode;
 import com.marcleef.mlserver.Util.JSON.Token;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class DecisionTree extends Model implements Serializable {
 
@@ -85,7 +86,7 @@ public class DecisionTree extends Model implements Serializable {
             result = 0;
         }
         else {
-            result = (-((double)yes/total) * logBase2(((double)yes/total))) - (((double)no/total) * logBase2(((double)no/total)));
+            result = (-(yes /total) * logBase2((yes /total))) - ((no /total) * logBase2((no /total)));
         }
 
         if(Double.isNaN(result)) {
@@ -120,7 +121,7 @@ public class DecisionTree extends Model implements Serializable {
 
 
 
-        double result =  eNorm - (((double)no/total) * eWeak) - (((double)yes/total) * eStrong);
+        double result =  eNorm - ((no /total) * eWeak) - ((yes /total) * eStrong);
         return result;
     }
 
@@ -314,10 +315,7 @@ public class DecisionTree extends Model implements Serializable {
             }
         }
 
-        if(cur.attribute.equals("+")) {
-            return true;
-        }
-        return false;
+        return cur.attribute.equals("+");
 
     }
 
@@ -341,7 +339,7 @@ public class DecisionTree extends Model implements Serializable {
      * Getter method for attribute information.
      * @return Attributes in JSONArray format.
      */
-    public JSONArray getAttributes() {
+    public JSONArray getJSONAttributes() {
         return new JSONArray(attributeMap.keySet().toArray(new String[0]));
     }
 

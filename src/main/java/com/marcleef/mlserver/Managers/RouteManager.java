@@ -39,7 +39,7 @@ public final class RouteManager {
             JSONObject obj;
             JSONArray examples;
             JSONArray attributes;
-            String name;
+            String treeName;
             String token;
             String classVariable;
             ArrayList<Example> trainingSet;
@@ -66,7 +66,7 @@ public final class RouteManager {
 
             // Get name of the incoming Decision Tree.
             try {
-                name = obj.getString("name");
+                treeName = obj.getString("name");
             }
             catch(JSONException e) {
                 response.status(404);
@@ -78,34 +78,37 @@ public final class RouteManager {
                 token = obj.getString("token");
             } catch (JSONException e) {
                 response.status(404);
-                return new JSONResult("Error", "No name attribute specified.");
+                return new JSONResult("Error", "No token included.");
             }
 
             // Authenticate token.
-            if(!userManager.authenticateUser(token)) {
+            String username = userManager.authenticateUser(token);
+            if(!username.equals("")) {
+                // Get class variable value.
+                classVariable = attributes.get(attributes.length() - 1).toString();
+
+                // Convert JSON to training set readable by the decision tree class.
+                try {
+                    trainingSet = Converter.JSONtoExampleList(attributes, examples);
+                }
+                catch (JSONException e) {
+                    response.status(404);
+                    return new JSONResult("Error", "Examples contain non-integer boolean values.");
+                }
+
+                // Build decision tree.
+                DecisionTree dt = new DecisionTree(trainingSet, classVariable, treeName, false);
+
+                // Save to db.
+                ModelManager.serializeModelToDB(dt, username, treeName);
+
+                // Send back results to the client.
+                return new JSONResult("Success", "Tree built successfully.");
+            }
+            else {
                 response.status(401);
                 return new JSONResult("Error", "Token has expired or does not exist.");
             }
-            // Get class variable value.
-            classVariable = attributes.get(attributes.length() - 1).toString();
-
-            // Convert JSON to training set readable by the decision tree class.
-            try {
-                trainingSet = Converter.JSONtoExampleList(attributes, examples);
-            }
-            catch (JSONException e) {
-                response.status(404);
-                return new JSONResult("Error", "Examples contain non-integer boolean values.");
-            }
-
-            // Build decision tree.
-            DecisionTree dt = new DecisionTree(trainingSet, classVariable, name, false);
-
-            // Save to db.
-            modelManager.serializeModelToDB(dt, token);
-
-            // Send back results to the client.
-            return new JSONResult("Success", "Tree built successfully.");
         }, new JSONUtil());
     }
 
@@ -121,7 +124,7 @@ public final class RouteManager {
             JSONArray examples;
             JSONArray attributes;
             JSONObject obj;
-            String name;
+            String treeName;
             String token;
 
             // Get JSONObject for easy parsing.
@@ -145,7 +148,7 @@ public final class RouteManager {
 
             // Get tree name from request.
             try {
-                name = obj.getString("name");
+                treeName = obj.getString("name");
             } catch (JSONException e) {
                 response.status(404);
                 return new JSONResult("Error", "No name attribute specified.");
@@ -156,35 +159,44 @@ public final class RouteManager {
                 token = obj.getString("token");
             } catch (JSONException e) {
                 response.status(404);
-                return new JSONResult("Error", "No name attribute specified.");
+                return new JSONResult("Error", "No token included.");
             }
 
             // Authenticate token.
-            if(!userManager.authenticateUser(token)) {
+            String username = userManager.authenticateUser(token);
+            if(!username.equals("")) {
+                // Get decision tree from database.
+                try {
+                    Model m = ModelManager.deSerializeModelFromDB(treeName, username);
+                    DecisionTree dt;
+                    ArrayList<Character> results = new ArrayList<Character>();
+                    // Query decision tree and build up result list.
+                    if (m instanceof DecisionTree) {
+                        dt = (DecisionTree) m;
+                        // Read in test examples to query.
+                        ArrayList<Example> testSet = Converter.JSONtoExampleList(attributes, examples);
+                        for (Example e : testSet) {
+                            results.add(dt.testExample(e) ? '1' : '0');
+                        }
+                    }
+                    // TODO: Error checking on query examples.
+
+                    // Send back results.
+                    return new JSONQueryResult(results);
+                }
+
+                catch (SQLException e) {
+                    response.status(404);
+                    return new JSONResult("Error", "Given tree name has not been constructed.");
+                }
+
+            }
+            else {
                 response.status(401);
                 return new JSONResult("Error", "Token has expired or does not exist.");
             }
 
 
-            // Get decision tree from database.
-            Model m = modelManager.deSerializeModelFromDB(name, token);
-            DecisionTree dt;
-            ArrayList<Character> results = new ArrayList<Character>();
-
-            // Query decision tree and build up result list.
-            if (m instanceof DecisionTree) {
-                dt = (DecisionTree) m;
-                // Read in test examples to query.
-                ArrayList<Example> testSet = Converter.JSONtoExampleList(dt.getAttributes(), examples);
-                for (Example e : testSet) {
-                    results.add(dt.testExample(e) ? '1' : '0');
-                }
-            }
-
-            // TODO: Error checking on query examples.
-
-            // Send back results.
-            return new JSONQueryResult(results);
         }, new JSONUtil());
     }
 
@@ -194,7 +206,6 @@ public final class RouteManager {
     public void newUserListener() {
         post("/user/register", (request, response) -> {
             response.header("Access-Control-Allow-Origin", "*");
-;
             JSONObject obj;
             String username = "";
             String password = "";
@@ -242,7 +253,6 @@ public final class RouteManager {
     public void userLoginListener() {
         post("/user/login", (request, response) -> {
             response.header("Access-Control-Allow-Origin", "*");
-            ;
             JSONObject obj;
             String username = "";
             String password = "";
@@ -278,7 +288,7 @@ public final class RouteManager {
                 }
                 catch(SQLException e) {
                     response.status(404);
-                    return new JSONResult("Error", "Incorrect username/password combination.");
+                    return new JSONResult("Error", "Incorrect username/password combination or still active token.");
                 }
             }
             else {

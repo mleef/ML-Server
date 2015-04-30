@@ -33,11 +33,7 @@ public final class Converter {
             Boolean list[] = new Boolean[line.length];
             for(int j = 0; j < line.length; j++) {
                 try {
-                    if (Integer.parseInt(line[j]) == 1) {
-                        list[j] = true;
-                    } else {
-                        list[j] = false;
-                    }
+                    list[j] = Integer.parseInt(line[j]) == 1;
                 }
                 catch (NumberFormatException e) {
                     throw new JSONException("Non integer values detected.");

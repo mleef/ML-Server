@@ -1,12 +1,8 @@
 package com.marcleef.mlserver.Managers;
-import com.marcleef.mlserver.MachineLearning.DecisionTree;
-import com.marcleef.mlserver.MachineLearning.Model;
 import com.marcleef.mlserver.Util.JSON.JSONResult;
 import com.marcleef.mlserver.Util.JSON.Token;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.sql.*;
 import java.util.Date;
 
@@ -21,8 +17,9 @@ public final class UserManager {
 
     private static final int DAY_LENGTH = 86400000;
     private static final String SQL_GET_USER = "SELECT * FROM user WHERE username = ?";
+    private static final String SQL_GET_USER_BY_ID = "SELECT * FROM user WHERE id = ?";
     private static final String SQL_GET_TOKEN = "SELECT * FROM authToken WHERE token = ?";
-    private static final String SQL_NEW_TOKEN = "INSERT INTO authToken(userId, token, created) VALUES (?, ?, ?)";
+    private static final String SQL_NEW_TOKEN = "INSERT INTO authToken(userId, token, expires) VALUES (?, ?, ?)";
     private static final String SQL_NEW_USER = "INSERT INTO user(username, password, lastLogin, modified, created) VALUES (?, ?, ?, ?, ?)";
 
     public UserManager() throws ClassNotFoundException,
@@ -39,16 +36,16 @@ public final class UserManager {
 
         // Check for uniqueness of user name
         PreparedStatement checkAvailibility = connection
-                .prepareStatement(SQL_GET_USER);
+                .prepareStatement(SQL_GET_USER, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
         checkAvailibility.setString(1, name);
-        checkAvailibility.execute();
-        ResultSet rs = checkAvailibility.getResultSet();
+        ResultSet rs = checkAvailibility.executeQuery();
         if(rs.next()) {
+            rs.close();
             return new JSONResult("Error", "Username already exists.");
         }
 
         // If username is unique, generate timestamp and insert new user into database.
-        java.util.Date date= new java.util.Date();
+        Date date= new java.util.Date();
         Timestamp ts = new Timestamp(date.getTime());
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_NEW_USER);
@@ -61,6 +58,7 @@ public final class UserManager {
         pstmt.setTimestamp(5, ts);
         pstmt.executeUpdate();
         pstmt.close();
+        rs.close();
 
         return new JSONResult("Success", "User registered.");
     }
@@ -69,35 +67,39 @@ public final class UserManager {
     public Token loginUser(String name, String password) throws SQLException {
         // Check for uniqueness of user name
         PreparedStatement checkAvailibility = connection
-                .prepareStatement(SQL_GET_USER);
+                .prepareStatement(SQL_GET_USER, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
         checkAvailibility.setString(1, name);
-        checkAvailibility.execute();
-        ResultSet rs = checkAvailibility.getResultSet();
+        ResultSet rs = checkAvailibility.executeQuery();
 
-        // Validate password.
+        // Validate existence of some return data.
         if(rs.next()) {
+            // Check password is valid.
             if(rs.getString("password").equals(password)) {
-                // Update last login of user.
-                java.util.Date curDate= new java.util.Date();
-                Timestamp curTS = new Timestamp(curDate.getTime());
-                rs.updateTimestamp("lastLogin", curTS);
-
                 // Get user ID to update authentication table.
                 int userID = rs.getInt("id");
-
+                // Update last login of user.
+                Date curDate= new java.util.Date();
+                Timestamp curTS = new Timestamp(curDate.getTime());
+                rs.updateTimestamp("lastLogin", curTS);
+                rs.updateRow();
                 // Add a day to the current time.
                 Timestamp expTS = new Timestamp(curDate.getTime() + DAY_LENGTH);
 
                 // Generate new token and set expiration.
                 Token t = new Token(expTS.toString());
-
                 // Place new token with user id and timestamp into DB.
                 PreparedStatement newToken = connection
                         .prepareStatement(SQL_NEW_TOKEN);
                 newToken.setInt(1, userID);
                 newToken.setString(2, t.getKey());
-                newToken.setTimestamp(3, curTS);
+                newToken.setTimestamp(3, expTS);
                 newToken.execute();
+                // Close statement and result set.
+                rs.close();
+                checkAvailibility.close();
+                newToken.close();
+
+                // Return new token.
                 return t;
             }
             else {
@@ -105,38 +107,52 @@ public final class UserManager {
             }
         }
         else {
+            System.out.println("here");
             throw new SQLException();
         }
 
     }
 
-    public boolean authenticateUser(String token) throws SQLException{
+    public String authenticateUser(String token) throws SQLException{
 
-        // Check for uniqueness of user name
+        // Check for token.
         PreparedStatement authenticate = connection
                 .prepareStatement(SQL_GET_TOKEN);
         authenticate.setString(1, token);
-        authenticate.execute();
+        ResultSet rs = authenticate.executeQuery();
 
-        java.util.Date curDate= new java.util.Date();
+        int userID;
 
-        // Add a day to the current time.
-        Timestamp expTS = new Timestamp(curDate.getTime() + DAY_LENGTH);
-
-        ResultSet rs = authenticate.getResultSet();
-
+        Date curDate= new java.util.Date();
         if(rs.next()) {
             // Check if token has expired.
-            if(rs.getTimestamp("created").before(expTS)) {
-                return true;
+            if(getCurrentTime().before(rs.getTimestamp("expires"))) {
+                userID = rs.getInt("userId");
+                // Find user by ID.
+                PreparedStatement findUser = connection
+                        .prepareStatement(SQL_GET_USER_BY_ID);
+                findUser.setInt(1, userID);
+                ResultSet results = findUser.executeQuery();
+                if(results.next()) {
+                    // Return username.
+                    return results.getString("username");
+                }
+                else {
+                    return "";
+                }
             }
             else {
-                return false;
+                return "";
             }
         }
         else {
-            return false;
+            return "";
         }
+    }
+
+    private static Timestamp getCurrentTime() {
+        Date curDate= new java.util.Date();
+        return new Timestamp(curDate.getTime());
     }
 
 
