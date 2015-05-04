@@ -86,7 +86,13 @@ public final class RouteManager {
                 DecisionTree dt = new DecisionTree(trainingSet, classVariable, treeName, false);
 
                 // Save to db.
-                ModelManager.serializeModelToDB(dt, username);
+                try {
+                    ModelManager.serializeModelToDB(dt, username);
+                }
+                catch(SQLException e) {
+                    response.status(404);
+                    return new JSONResult("Error", "Tree name already exists for this account. Choose another name for your model.");
+                }
 
                 // Send back results to the client.
                 return new JSONResult("Success", "Tree built successfully.");
@@ -150,7 +156,7 @@ public final class RouteManager {
                     }
                     else {
                         response.status(404);
-                        return new JSONResult("Error", "Internal database error.");
+                        return new JSONResult("Error", "Could not find given tree name.");
                     }
                     // TODO: Error checking on query examples.
 

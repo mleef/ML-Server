@@ -46,6 +46,19 @@ public final class ModelManager {
      */
     public static long serializeModelToDB(Model m, String username) throws SQLException {
 
+        PreparedStatement checkUniqueness = connection
+                .prepareStatement(SQL_DESERIALIZE_MODEL);
+        checkUniqueness.setString(1, username);
+
+        checkUniqueness.setString(2, m.getName());
+        ResultSet modelsOfSameName = checkUniqueness.executeQuery();
+
+        // Make sure user isn't trying to make another model of the same name.
+        if(modelsOfSameName.next()) {
+            throw new SQLException();
+        }
+
+
         PreparedStatement pstmt = connection
                 .prepareStatement(SQL_SERIALIZE_MODEL);
 
@@ -92,7 +105,7 @@ public final class ModelManager {
             return m;
         }
 
-        return null;
+        throw new SQLException();
     }
 
 
