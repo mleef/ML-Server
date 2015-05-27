@@ -9,9 +9,7 @@ import java.io.Serializable;
 
 import com.marcleef.mlserver.Util.*;
 import com.marcleef.mlserver.Util.JSON.JSONTreeNode;
-import com.marcleef.mlserver.Util.JSON.Token;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 
 public class DecisionTree extends Model implements Serializable {
 
