@@ -16,10 +16,12 @@ public class NaiveBayes  extends Model {
     static ArrayList<Double> trainedWeights;
     private double baseWeight;
     private static String classVariable;
-    private static final double MAGNITUDE_THRESHOLD = .00001;
+    private String[] attributes;
+    private static final double THRESHOLD = .5;
 
     public NaiveBayes(ArrayList<Example> s, String classVar, double beta) {
         Examples = new ArrayList<ArrayList<Boolean>>();
+        attributes = s.get(0).getAttributes();
         for(int i = 0; i < s.size(); i++) {
             Examples.add(s.get(i).getVector());
         }
@@ -123,6 +125,27 @@ public class NaiveBayes  extends Model {
         }
         pWriter.close();
         fWriter.close();
+    }
+
+    /**
+     * Getter method for attribute information.
+     * @return Attributes in string array.
+     */
+    public String[] getAttributes() {
+        return attributes;
+    }
+
+    /**
+     * Test a list of examples.
+     * @param testSet Query examples to test against tree.
+     * @return List of predicted labels for test examples.
+     */
+    public ArrayList<Character> batchQuery(ArrayList<Example> testSet) {
+        ArrayList<Character> results = new ArrayList<Character>();
+        for (Example e : testSet) {
+            results.add(this.test(e.getVector()) > THRESHOLD ? '1' : '0');
+        }
+        return results;
     }
 
 }

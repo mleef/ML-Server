@@ -1,5 +1,7 @@
 CREATE DATABASE ml;
 USE ml;
-CREATE TABLE IF NOT EXISTS `dt`(`serialized_id` int(11) NOT NULL auto_increment,`username` VARCHAR(255),`treename` varchar(20) default NULL, `serialized_object` blob, PRIMARY KEY(`serialized_id`))ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE IF NOT EXISTS `dt`(`serialized_id` int(11) NOT NULL auto_increment,`username` VARCHAR(255),`modelname` varchar(20) default NULL, `serialized_object` blob, PRIMARY KEY(`serialized_id`))ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE IF NOT EXISTS `pc`(`serialized_id` int(11) NOT NULL auto_increment,`username` VARCHAR(255),`modelname` varchar(20) default NULL, `serialized_object` blob, PRIMARY KEY(`serialized_id`))ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE IF NOT EXISTS `nb`(`serialized_id` int(11) NOT NULL auto_increment,`username` VARCHAR(255),`modelname` varchar(20) default NULL, `serialized_object` blob, PRIMARY KEY(`serialized_id`))ENGINE=InnoDB DEFAULT CHARSET=latin1;
 CREATE TABLE IF NOT EXISTS `user` ( `id` INT NOT NULL AUTO_INCREMENT, `username` VARCHAR(255) NOT NULL, `password` VARCHAR(255) NOT NULL, `lastLogin` DATETIME NULL, `modified` DATETIME NULL, `created` DATETIME NULL, PRIMARY KEY (`id`));
 CREATE TABLE IF NOT EXISTS `authToken` ( `id` INT NOT NULL AUTO_INCREMENT, `userId` INT NOT NULL, `token` VARCHAR(255) NOT NULL, `created` DATETIME NOT NULL, PRIMARY KEY (`id`, `userId`), INDEX `fk_authToken_user_idx` (`userId` ASC), UNIQUE INDEX `token_UNIQUE` (`token` ASC), CONSTRAINT `fk_authToken_user` FOREIGN KEY (`userId`) REFERENCES `ml`.`user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION);
