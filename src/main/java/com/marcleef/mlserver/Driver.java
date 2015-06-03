@@ -27,6 +27,12 @@ public class Driver {
 
             // Listen for POST requests for tree querying.
             rm.decisionTreeQueryListener();
+
+            // Listen for POST requests for naive bayes creation.
+            rm.naiveBayesBuildListener();
+
+            // Listen for POST requests for naive bayes querying.
+            rm.naiveBayesQueryListener();
         }
         catch (Exception e) {
 

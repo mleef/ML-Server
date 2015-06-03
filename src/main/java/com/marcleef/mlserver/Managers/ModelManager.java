@@ -74,7 +74,6 @@ public final class ModelManager {
             checkUniqueness = connection.prepareStatement(SQL_DESERIALIZE_MODEL_NB);
             storeModel = connection.prepareStatement(SQL_SERIALIZE_MODEL_NB);
         }
-
         // Fill in statement parameters and execute.
         checkUniqueness.setString(1, username);
         checkUniqueness.setString(2, m.getName());
@@ -102,6 +101,9 @@ public final class ModelManager {
 
     /**
      * To de-serialize a java object from database
+     * @param modelname Name of model to query from database.
+     * @param username Username of user querying model.
+     * @param model Type of model to serialize (for table selection purposes).
      * @throws SQLException
      * @throws IOException
      * @throws ClassNotFoundException
@@ -118,11 +120,10 @@ public final class ModelManager {
             loadModel = connection.prepareStatement(SQL_DESERIALIZE_MODEL_NB);
         }
 
+        // Populate query with values and execute.
         loadModel.setString(1, username);
-
         loadModel.setString(2, modelname);
         ResultSet rs = loadModel.executeQuery();
-
         if(rs.next()) {
             byte[] buf = rs.getBytes(1);
             ObjectInputStream objectIn = null;

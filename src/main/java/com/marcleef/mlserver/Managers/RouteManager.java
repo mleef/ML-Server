@@ -49,15 +49,14 @@ public final class RouteManager {
             // Get JSONObject for easy parsing.
             try {
                 obj = new JSONObject(request.body());
-            }
-            catch (JSONException e) {
+            } catch (JSONException e) {
                 response.status(404);
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
             ArrayList<String> missingParams = validateJSON(obj, "examples", "attributes", "model-name", "token");
 
-            if(missingParams.size() > 0) {
+            if (missingParams.size() > 0) {
                 response.status(404);
                 return new JSONResult("Error", "Request did not contain required properties: " + missingParams.toString());
             }
@@ -70,15 +69,14 @@ public final class RouteManager {
 
             // Authenticate token.
             String username = userManager.authenticateUser(token);
-            if(username != null) {
+            if (username != null) {
                 // Get class variable value.
                 classVariable = attributes.get(attributes.length() - 1).toString();
 
                 // Convert JSON to training set readable by the decision tree class.
                 try {
                     trainingSet = Converter.JSONtoExampleList(attributes, examples);
-                }
-                catch (JSONException e) {
+                } catch (JSONException e) {
                     response.status(404);
                     return new JSONResult("Error", "Examples contain non-integer boolean values.");
                 }
@@ -89,16 +87,14 @@ public final class RouteManager {
                 // Save to db.
                 try {
                     ModelManager.serializeModelToDB(dt, username, "dt");
-                }
-                catch(SQLException e) {
+                } catch (SQLException e) {
                     response.status(404);
                     return new JSONResult("Error", "Tree name already exists for this account. Choose another name for your model.");
                 }
 
                 // Send back results to the client.
                 return new JSONResult("Success", "Tree built successfully.");
-            }
-            else {
+            } else {
                 response.status(401);
                 return new JSONResult("Error", "Token has expired or does not exist.");
             }
@@ -210,7 +206,7 @@ public final class RouteManager {
                 return new JSONResult("Error", "Invalid JSON.");
             }
 
-            ArrayList<String> missingParams = validateJSON(obj, "examples", "attributes", "name", "token");
+            ArrayList<String> missingParams = validateJSON(obj, "examples", "attributes", "model-name", "token");
 
             if(missingParams.size() > 0) {
                 response.status(404);
@@ -239,8 +235,7 @@ public final class RouteManager {
                 }
 
                 // Build decision tree.
-                // DecisionTree dt = new DecisionTree(trainingSet, classVariable, modelName, false);
-                NaiveBayes nb = new NaiveBayes(trainingSet, classVariable, 2);
+                NaiveBayes nb = new NaiveBayes(trainingSet, classVariable, 2, modelName);
 
                 // Save to db.
                 try {
@@ -320,7 +315,7 @@ public final class RouteManager {
                     }
                     else {
                         response.status(404);
-                        return new JSONResult("Error", "Could not find given tree name.");
+                        return new JSONResult("Error", "Internal database error.");
                     }
                     // TODO: Error checking on query examples.
 
@@ -330,7 +325,7 @@ public final class RouteManager {
 
                 catch (SQLException e) {
                     response.status(404);
-                    return new JSONResult("Error", "Given tree name has not been constructed.");
+                    return new JSONResult("Error", "Given naive bayes model name has not been constructed.");
                 }
 
             }

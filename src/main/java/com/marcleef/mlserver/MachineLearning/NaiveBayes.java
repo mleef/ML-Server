@@ -3,23 +3,30 @@ package com.marcleef.mlserver.MachineLearning;
 /**
  * Created by marc_leef on 4/15/15.
  */
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+
 import java.util.ArrayList;
+import java.io.Serializable;
 
 import com.marcleef.mlserver.Util.Example;
 
-public class NaiveBayes  extends Model {
+public class NaiveBayes  extends Model implements Serializable {
     ArrayList<ArrayList<Boolean>> Examples;
     static ArrayList<Double> trainedWeights;
     private double baseWeight;
     private static String classVariable;
     private String[] attributes;
     private static final double THRESHOLD = .5;
+    private String nbName;
 
-    public NaiveBayes(ArrayList<Example> s, String classVar, double beta) {
+    /**
+     * Naive Bayes model constructor.
+     * @param s List of examples to train model on.
+     * @param classVar Class Variable of training samples.
+     * @param beta Value to use for beta prior.
+     * @return New Naive Bayes object instance.
+     */
+    public NaiveBayes(ArrayList<Example> s, String classVar, double beta, String modelName) {
+        nbName = modelName;
         Examples = new ArrayList<ArrayList<Boolean>>();
         attributes = s.get(0).getAttributes();
         for(int i = 0; i < s.size(); i++) {
@@ -29,6 +36,12 @@ public class NaiveBayes  extends Model {
         trainedWeights = learn(Examples, beta);
     }
 
+    /**
+     * Runs the naive bayes classifier to train the model.
+     * @param s Training examples with which to build models.
+     * @param beta Beta prior value.
+     * @return List of variable weights.
+     */
     public ArrayList<Double> learn(ArrayList<ArrayList<Boolean>> s, double beta) {
         int lastIndex = s.get(0).size() - 1;
         double topBeta = beta - 1;
@@ -103,28 +116,20 @@ public class NaiveBayes  extends Model {
         return weights;
     }
 
-    public double test(ArrayList<Boolean> Example) {
+    /**
+     * Test a list of examples.
+     * @param example Example to test against model.
+     * @return Label for inputted example.
+     */
+    public double test(ArrayList<Boolean> example) {
         double result = baseWeight;
-        for(int i = 0; i < Example.size() - 1; i++) {
-            if(Example.get(i)) {
+        for(int i = 0; i < example.size() - 1; i++) {
+            if(example.get(i)) {
                 result += trainedWeights.get(i);
             }
         }
 
         return 1/(1 + Math.exp(-result));
-    }
-
-
-    public void writeModel(File f, String[] attributes) throws IOException {
-
-        FileWriter fWriter = new FileWriter(f);
-        PrintWriter pWriter = new PrintWriter(fWriter);
-        pWriter.println(baseWeight);
-        for(int i = 0; i < attributes.length - 1; i++) {
-            pWriter.println(attributes[i] + " " + trainedWeights.get(i));
-        }
-        pWriter.close();
-        fWriter.close();
     }
 
     /**
@@ -146,6 +151,11 @@ public class NaiveBayes  extends Model {
             results.add(this.test(e.getVector()) > THRESHOLD ? '1' : '0');
         }
         return results;
+    }
+
+    @Override
+    public String getName() {
+        return nbName;
     }
 
 }
